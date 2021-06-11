@@ -1,84 +1,55 @@
 from flask import Flask, jsonify, request
-from flask_restful import Api, Resource, reqparse, abort
+from flask_restful import Api
 from flask_pymongo import pymongo
-from bson.json_util import dumps, ObjectId
 import db_config as database
+
+#RESOURCES
+from res.badge import Badge
+from res.posts import Posts
+from res.badges import Badges
 
 app=Flask(__name__)
 api=Api(app)
 
+@app.route('/all/adults/')
+def get_adults():
+    response = list(database.db.Badges.find({'age': {"$gte": 18}}))
 
-class Test(Resource):
-    def get(self):
-        return jsonify({"message":"Test OK, you're connect"})
+    for document in response:
+        document["_id"] = str(document['_id'])
 
-class Badge(Resource):
+    return jsonify(response)
 
-    def get(self,by,data):
-        response = self.abort_if_not_exist(by, data)
-        response['_id'] = str(response['_id'])
-        return jsonify(response)
+@app.route('/all/projection/')
+def get_name_and_age():
+    response = list(database.db.Badges.find({'age': {"$gte": 18}}, {'name': 1, 'age':1}))
 
+    for document in response:
+        document["_id"] = str(document['_id'])
 
-    def post(self):
-        _id = str(database.db.Badges.insert_one(
-            {
-                'header_img_url': request.json['header_img_url'],
-                'profile_picture_url': request.json['profile_picture_url'],
-                'name': request.json['name'],
-                'age': request.json['age'],
-                'city': request.json['city'],
-                'followers': request.json['followers'],
-                'likes': request.json['likes'],
-                'posts': request.json['posts'],   
-                'postss': request.json['postss']
-            }
-        ).inserted_id)
+    return jsonify(response)
 
-        return jsonify({"_id":_id})
+@app.route('/all/kids/')
+def get_kids():
+    response = list(database.db.Badges.find({'age': {"$lt": 18}}, {'name': 1, 'age':1}))
 
-    def put(self, by, data):
-        response = self.abort_if_not_exist(by, data)
+    for document in response:
+        document["_id"] = str(document['_id'])
 
-        for key, value in request.json.items():
-            response[key]=value
+    return jsonify(response)
 
-        database.db.Badges.update_one({'_id':ObjectId(response['_id'])},
-        {'$set':{
-                'header_img_url': response['header_img_url'],
-                'profile_picture_url': response['profile_picture_url'],
-                'name': response['name'],
-                'age': response['age'],
-                'city': response['city'],
-                'followers': response['followers'],
-                'likes': response['likes'],
-                'posts': response['posts'],   
-                'postss': response['postss']
-            }
-        })
+@app.route('/all/user_names/')
+def get_all_names():
+    response = list(database.db.Badges.find({},{'name':1}))
 
-        response['_id'] = str(response['_id'])
-        return jsonify(response)
+    for document in response:
+        document["_id"] = str(document['_id'])
 
-    def abort_if_not_exist(self, by, data):
-        if by == "_id":
-            response = database.db.Badges.find_one({"_id":ObjectId(data)})
-        else:
-            response = database.db.Badges.find_one({f"{by}":data})
-
-        if response:
-            return response
-        else:
-            abort(jsonify({"status":404, f"{by}":f"{data} not found"}))
-
-class AllBadge(Resource):
-    """ Get all badges """
-    def get(self):
-        pass
-
+    return jsonify(response)
 
 api.add_resource(Badge,'/new/','/<string:by>=<string:data>')
-api.add_resource(Test,'/test/')
+api.add_resource(Badges, '/all/', '/delete/all/')
+api.add_resource(Posts, '/new/post/<string:_id>', '/posts/<string:_id>', '/<string:_id>/<string:uuid>')
 
 
 if __name__ == '__main__':

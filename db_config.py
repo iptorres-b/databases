@@ -6,6 +6,6 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 
-client = pymongo.MongoClient(f"mongodb+srv://dbPaulina:paulinatb@example.ekebt.mongodb.net/db_example?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://dbPaulina:paulinatb@example.ekebt.mongodb.net/db_example?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE")
 
 db = client.db_example
